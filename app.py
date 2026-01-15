@@ -7,7 +7,7 @@ API_KEY = "AIzaSyA89yPg93ZrDYh5FkweAPfBL2Dqg19uC4s"
 
 # Sayfa Ayarları
 st.set_page_config(
-    page_title="TextHero", 
+    page_title="AI Asistan", 
     page_icon="✨", 
     layout="centered", 
     initial_sidebar_state="expanded"
@@ -19,65 +19,44 @@ genai.configure(api_key=API_KEY)
 # --- SOL MENÜ (KONTROL PANELİ) ---
 with st.sidebar:
     st.title("⚙️ Panel")
+    st.write("Uygulama Ayarları")
     
     # 1. Tema Seçeneği
     theme_mode = st.toggle("🌙 Karanlık Mod", value=True)
     
-    st.divider()
+    st.divider() # Çizgi
     
-    # 2. Yanıt Tarzı
+    # 2. Yanıt Tarzı Seçimi (Sola taşıdık, daha temiz oldu)
     option = st.selectbox(
         'Yapay Zeka Modu',
         ('Detaylı Analiz', 'Romantik & Etkileyici', 'Cool & Esprili', 'Kanka Modu', 'Laf Sokucu')
     )
     
-    st.info("Modu buradan değiştirebilirsin.")
+    st.info("💡 Not: Modu değiştirdiğinde analiz tarzı yenilenir.")
 
-# --- TEMA & RENK AYARLARI ---
+# --- TEMA RENGİNİ AYARLAYAN SİHİRLİ KOD ---
 if theme_mode:
-    # Karanlık Mod (Dark)
+    # Karanlık Mod Renkleri
     bg_color = "#0e1117"
-    text_color = "#ffffff"
+    text_color = "white"
     card_bg = "#1f2229"
-    uploader_border = "rgba(255, 255, 255, 0.3)" # Dosya kutusu kenarlığı
 else:
-    # Aydınlık Mod (Light)
+    # Aydınlık Mod Renkleri (Apple Beyazı)
     bg_color = "#ffffff"
-    text_color = "#000000"
+    text_color = "black"
     card_bg = "#f0f2f6"
-    uploader_border = "rgba(0, 0, 0, 0.3)" # Dosya kutusu kenarlığı
 
-# --- CSS İLE ÖZELLEŞTİRME ---
+# CSS ile renkleri zorla değiştiriyoruz
 st.markdown(f"""
     <style>
-    /* Genel Arka Plan ve Yazı Rengi */
     .stApp {{
         background-color: {bg_color};
         color: {text_color};
     }}
-    
-    /* Inputlar ve Menüler */
+    /* Yazı alanları ve kutuların renk uyumu için */
     .stTextInput, .stSelectbox, .stFileUploader {{
         color: {text_color};
     }}
-
-    /* Dosya Yükleme Alanı (Drag & Drop) Özelleştirmesi */
-    [data-testid="stFileUploaderDropzone"] {{
-        border-color: {uploader_border};
-        color: {text_color};
-    }}
-    [data-testid="stFileUploaderDropzone"] div {{
-        color: {text_color};
-    }}
-    [data-testid="stFileUploaderDropzone"] small {{
-        color: {text_color};
-        opacity: 0.8;
-    }}
-    
-    /* Gereksiz Footer Gizleme (Header Kalsın) */
-    #MainMenu {{visibility: hidden;}}
-    footer {{visibility: hidden;}}
-    
     </style>
     """, unsafe_allow_html=True)
 
@@ -89,7 +68,6 @@ def get_auto_model():
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
         
-        # Model önceliği: Flash -> Vision -> Herhangi biri
         chosen_model = next((m for m in available_models if 'flash' in m), None)
         if not chosen_model:
             chosen_model = next((m for m in available_models if 'vision' in m), None)
@@ -103,23 +81,34 @@ def get_auto_model():
 
 model, model_status = get_auto_model()
 
-# --- ANA EKRAN ---
-st.title("✨ TextHero")
-st.write("Görseli yükle, gerisini yapay zekaya bırak.")
+# --- ANA EKRAN TASARIMI ---
+# Menüleri gizleyen kod (Daha temiz görünüm için)
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+st.title("✨ AI Görsel Analiz")
+st.write("Aşağıya bir mesajlaşma ekran görüntüsü bırak, gerisini bana sor.")
 
 # Dosya Yükleme
 uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    st.image(image, caption='Yüklenen Görsel', use_column_width=True)
+    # Görseli ortalı ve şık gösterme
+    st.image(image, caption='Analiz Edilecek Görsel', use_column_width=True)
     
-    # Buton
+    # Analiz Butonu
     if st.button('✨ Analizi Başlat', type="primary"):
         if not model:
-            st.error("Model bağlantısı kurulamadı.")
+            st.error("Model bağlantı hatası.")
         else:
-            with st.spinner('TextHero düşünüyor...'):
+            with st.spinner('Yapay zeka düşünüyor...'):
                 try:
                     prompt = "Bu görseldeki duruma Türkçe cevap ver."
                     if 'Detaylı' in option: prompt += " Detaylı analiz et."
@@ -130,17 +119,13 @@ if uploaded_file is not None:
                     
                     response = model.generate_content([prompt, image])
                     
-                    # Sonuç Kutusu
+                    # Cevabı şık bir kutuda gösterelim
                     st.markdown(f"""
-                    <div style="background-color: {card_bg}; padding: 20px; border-radius: 10px; color: {text_color}; border: 1px solid {uploader_border};">
-                        <h4>💡 TextHero Tavsiyesi:</h4>
+                    <div style="background-color: {card_bg}; padding: 20px; border-radius: 10px; color: {text_color}; border: 1px solid rgba(128, 128, 128, 0.2);">
+                        <h4>💡 AI Tavsiyesi:</h4>
                         <p>{response.text}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 except Exception as e:
-                    st.error(f"Hata oluştu: {e}")
-
-# --- İMZA ---
-st.divider()
-st.caption("Developed by Poyraz Dede © 2026")
+                    st.error(f"Hata: {e}")
