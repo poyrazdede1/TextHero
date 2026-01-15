@@ -3,7 +3,7 @@ import google.generativeai as genai
 from PIL import Image
 
 # --- AYARLAR ---
-API_KEY = "AIzaSyA89yPg93ZrDYh5FkweAPfBL2Dqg19uC4s"
+API_KEY = "AIzaSyB60_eYKWF7kKzzTSOGBijudbTpw_LQafI"
 
 # Sayfa Ayarları
 st.set_page_config(
