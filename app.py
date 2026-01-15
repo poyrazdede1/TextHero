@@ -3,97 +3,84 @@ import google.generativeai as genai
 from PIL import Image
 
 # --- AYARLAR ---
-# Buraya kendi API Key'ini yapıştır
 API_KEY = "AIzaSyA89yPg93ZrDYh5FkweAPfBL2Dqg19uC4s"
 
-# Sayfa Ayarları (Apple/Google Tarzı Sade Başlık)
-st.set_page_config(
-    page_title="AI Asistan", 
-    page_icon="✨", 
-    layout="centered", 
-    initial_sidebar_state="collapsed"
-)
-
-# Gemini Kurulumu
+st.set_page_config(page_title="TextHero", page_icon="🦸‍♂️")
 genai.configure(api_key=API_KEY)
 
-# --- CSS İLE TASARIM MAKYAJI ---
-# Bu kısım o tepedeki renkli çizgileri ve "Deploy" butonunu gizler, daha temiz görünür.
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stApp {background-color: #0e1117;} 
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# --- AKILLI MODEL SEÇİCİ (Arkada Çalışan Beyin) ---
+# --- AKILLI MODEL BULUCU ---
+# Bu fonksiyon, Google'dan senin hesabına tanımlı modelleri ister
+# ve içlerinden resim okuyabilen (vision) İLK modeli seçer.
 def get_auto_model():
     try:
+        # Hesabındaki tüm modelleri listele
         available_models = []
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
         
+        # Eğer liste boşsa
         if not available_models:
-            return None, "Model bulunamadı."
+            return None, "Listenizde hiç model bulunamadı."
 
-        # Öncelik sırası: Flash -> Vision -> İlk Bulunan
-        chosen_model = next((m for m in available_models if 'flash' in m), None)
-        if not chosen_model:
-            chosen_model = next((m for m in available_models if 'vision' in m), None)
-        if not chosen_model:
-            chosen_model = available_models[0]
+        # Öncelik: Adında 'flash' geçen en yeni model
+        chosen_model_name = next((m for m in available_models if 'flash' in m), None)
+        
+        # Flash yoksa, adında 'vision' geçen modele bak
+        if not chosen_model_name:
+            chosen_model_name = next((m for m in available_models if 'vision' in m), None)
+            
+        # O da yoksa listenin ilkini al (Son çare)
+        if not chosen_model_name:
+            chosen_model_name = available_models[0]
 
-        return genai.GenerativeModel(chosen_model), chosen_model
+        return genai.GenerativeModel(chosen_model_name), chosen_model_name
 
     except Exception as e:
         return None, str(e)
 
+# Modeli başlat
 model, model_status = get_auto_model()
 
-# --- ARAYÜZ TASARIMI ---
-# Google Gemini gibi sadece başlık ve alt açıklama
-st.title("✨ AI Görsel Analiz")
-st.caption("Gelişmiş yapay zeka destekli mesaj ve durum analiz sistemi.")
+# --- ARAYÜZ ---
+st.title("🦸‍♂️ TextHero")
 
-st.divider() # İnce, şık bir çizgi
+# Durum Bilgilendirmesi (Hangi model bulundu?)
+if model:
+    st.caption(f"✅ Bağlanılan Model: {model_status}")
+else:
+    st.error(f"❌ Model Bulunamadı Hata: {model_status}")
 
-# Dosya Yükleme Alanı
-uploaded_file = st.file_uploader("Analiz edilecek görseli seçin", type=["jpg", "png", "jpeg"])
+st.write("Ekran görüntüsünü yükle, gerisini bana bırak.")
 
-# Mod Seçimi (Daha kurumsal isimler)
+uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
+
 option = st.selectbox(
-    'Yanıt Tarzı Seçin',
-    ('Detaylı Durum Analizi', 'Etkileyici & Romantik', 'Cool & Esprili', 'Samimi & Arkadaşça', 'Eleştirel & İğneleyici')
+    'Mod Seç:',
+    ('Analiz Et', 'Romantik', 'Cool/Komik', 'Arkadasca', 'Laf Sok')
 )
 
 # --- İŞLEM ---
-if uploaded_file is not None:
-    # Resmi göster (Kenarları yuvarlatılmış gibi temiz durur)
-    image = Image.open(uploaded_file)
-    st.image(image, use_column_width=True)
-    
-    # Butonu biraz daha şık yapalım
-    if st.button('Analizi Başlat', type="primary"):
-        if not model:
-            st.error("Bağlantı hatası: Model bulunamadı.")
-        else:
-            with st.spinner('Yapay zeka yanıtı oluşturuyor...'):
-                try:
-                    prompt = "Bu görseldeki mesajlaşmaya veya duruma Türkçe cevap ver."
-                    if 'Detaylı' in option: prompt += " Olayı detaylıca analiz et, psikolojik çıkarımlar yap."
-                    elif 'Romantik' in option: prompt += " Çok etkileyici, romantik ve duygusal bir cevap yaz."
-                    elif 'Cool' in option: prompt += " Umursamaz, havalı ve kısa bir cevap yaz."
-                    elif 'Arkadaşça' in option: prompt += " Çok samimi, kanka tarzı doğal bir cevap yaz."
-                    elif 'Eleştirel' in option: prompt += " Zekice laf sokan, iğneleyici bir cevap yaz."
-                    
-                    response = model.generate_content([prompt, image])
-                    
-                    st.markdown("### 💡 AI Önerisi")
-                    st.info(response.text)
-                    
-                except Exception as e:
-                    st.error(f"Bir hata oluştu: {e}")
+if uploaded_file is not None and st.button('Cevapla 🚀'):
+    if not model:
+        st.error("Çalışan bir model bulunamadığı için işlem yapılamıyor.")
+    else:
+        image = Image.open(uploaded_file)
+        st.image(image, caption='Görsel', use_column_width=True)
+        
+        with st.spinner('Yapay zeka düşünüyor...'):
+            try:
+                # Prompt
+                prompt = "Bu görseldeki mesajlaşmaya Türkçe cevap ver."
+                if 'Analiz' in option: prompt += " Durumu analiz et."
+                elif 'Romantik' in option: prompt += " Romantik ve etkileyici 3 cevap yaz."
+                elif 'Cool' in option: prompt += " Cool ve komik 3 cevap yaz."
+                elif 'Arkadasca' in option: prompt += " Arkadaşça 3 cevap yaz."
+                elif 'Laf Sok' in option: prompt += " Kapak edecek, iğneleyici 3 cevap yaz."
+                
+                response = model.generate_content([prompt, image])
+                st.success("Tavsiyeler:")
+                st.write(response.text)
+                
+            except Exception as e:
+                st.error(f"Beklenmedik bir hata: {e}")
