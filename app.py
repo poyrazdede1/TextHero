@@ -7,7 +7,7 @@ API_KEY = "AIzaSyA89yPg93ZrDYh5FkweAPfBL2Dqg19uC4s"
 
 # Sayfa Ayarları
 st.set_page_config(
-    page_title="AI Asistan", 
+    page_title="TextHero", 
     page_icon="✨", 
     layout="centered", 
     initial_sidebar_state="expanded"
@@ -19,41 +19,42 @@ genai.configure(api_key=API_KEY)
 # --- SOL MENÜ (KONTROL PANELİ) ---
 with st.sidebar:
     st.title("⚙️ Panel")
-    st.write("Uygulama Ayarları")
     
     # 1. Tema Seçeneği
     theme_mode = st.toggle("🌙 Karanlık Mod", value=True)
     
     st.divider() # Çizgi
     
-    # 2. Yanıt Tarzı Seçimi (Sola taşıdık, daha temiz oldu)
+    # 2. Yanıt Tarzı Seçimi
     option = st.selectbox(
         'Yapay Zeka Modu',
         ('Detaylı Analiz', 'Romantik & Etkileyici', 'Cool & Esprili', 'Kanka Modu', 'Laf Sokucu')
     )
     
-    st.info("💡 Not: Modu değiştirdiğinde analiz tarzı yenilenir.")
+    st.info("💡 Modu buradan değiştirebilirsin.")
 
-# --- TEMA RENGİNİ AYARLAYAN SİHİRLİ KOD ---
+# --- TEMA RENKLERİ ---
 if theme_mode:
-    # Karanlık Mod Renkleri
     bg_color = "#0e1117"
     text_color = "white"
     card_bg = "#1f2229"
 else:
-    # Aydınlık Mod Renkleri (Apple Beyazı)
     bg_color = "#ffffff"
     text_color = "black"
     card_bg = "#f0f2f6"
 
-# CSS ile renkleri zorla değiştiriyoruz
+# CSS (Menü tuşunu geri getirdik!)
 st.markdown(f"""
     <style>
     .stApp {{
         background-color: {bg_color};
         color: {text_color};
     }}
-    /* Yazı alanları ve kutuların renk uyumu için */
+    /* Sadece "Deploy" ve gereksiz footer yazılarını gizle, ama Üst Çubuğu (Header) KORU */
+    #MainMenu {{visibility: hidden;}}
+    footer {{visibility: hidden;}}
+    /* header {{visibility: hidden;}}  <-- BURAYI İPTAL ETTİK Kİ MENÜ GELSİN */
+    
     .stTextInput, .stSelectbox, .stFileUploader {{
         color: {text_color};
     }}
@@ -81,34 +82,22 @@ def get_auto_model():
 
 model, model_status = get_auto_model()
 
-# --- ANA EKRAN TASARIMI ---
-# Menüleri gizleyen kod (Daha temiz görünüm için)
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-st.title("✨ AI Görsel Analiz")
-st.write("Aşağıya bir mesajlaşma ekran görüntüsü bırak, gerisini bana sor.")
+# --- ANA EKRAN ---
+st.title("TextHero")
+st.write("Görseli yükle, gerisini yapay zekaya bırak.")
 
 # Dosya Yükleme
 uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
-    # Görseli ortalı ve şık gösterme
     st.image(image, caption='Analiz Edilecek Görsel', use_column_width=True)
     
-    # Analiz Butonu
     if st.button('✨ Analizi Başlat', type="primary"):
         if not model:
             st.error("Model bağlantı hatası.")
         else:
-            with st.spinner('Yapay zeka düşünüyor...'):
+            with st.spinner('TextHero düşünüyor...'):
                 try:
                     prompt = "Bu görseldeki duruma Türkçe cevap ver."
                     if 'Detaylı' in option: prompt += " Detaylı analiz et."
@@ -119,13 +108,16 @@ if uploaded_file is not None:
                     
                     response = model.generate_content([prompt, image])
                     
-                    # Cevabı şık bir kutuda gösterelim
                     st.markdown(f"""
                     <div style="background-color: {card_bg}; padding: 20px; border-radius: 10px; color: {text_color}; border: 1px solid rgba(128, 128, 128, 0.2);">
-                        <h4>💡 AI Tavsiyesi:</h4>
+                        <h4>💡 TextHero Tavsiyesi:</h4>
                         <p>{response.text}</p>
                     </div>
                     """, unsafe_allow_html=True)
                     
                 except Exception as e:
                     st.error(f"Hata: {e}")
+
+# --- ALT BİLGİ (FOOTER) ---
+st.divider()
+st.caption("Developed by Poyraz Dede © 2026")
