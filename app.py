@@ -3,64 +3,33 @@ import google.generativeai as genai
 from PIL import Image
 
 # --- AYARLAR ---
+# Buraya kendi API Key'ini yapıştır
 API_KEY = "AIzaSyA89yPg93ZrDYh5FkweAPfBL2Dqg19uC4s"
 
-# Sayfa Ayarları
+# Sayfa Ayarları (Apple/Google Tarzı Sade Başlık)
 st.set_page_config(
     page_title="AI Asistan", 
     page_icon="✨", 
     layout="centered", 
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="collapsed"
 )
 
 # Gemini Kurulumu
 genai.configure(api_key=API_KEY)
 
-# --- SOL MENÜ (KONTROL PANELİ) ---
-with st.sidebar:
-    st.title("⚙️ Panel")
-    st.write("Uygulama Ayarları")
-    
-    # 1. Tema Seçeneği
-    theme_mode = st.toggle("🌙 Karanlık Mod", value=True)
-    
-    st.divider() # Çizgi
-    
-    # 2. Yanıt Tarzı Seçimi (Sola taşıdık, daha temiz oldu)
-    option = st.selectbox(
-        'Yapay Zeka Modu',
-        ('Detaylı Analiz', 'Romantik & Etkileyici', 'Cool & Esprili', 'Kanka Modu', 'Laf Sokucu')
-    )
-    
-    st.info("💡 Not: Modu değiştirdiğinde analiz tarzı yenilenir.")
+# --- CSS İLE TASARIM MAKYAJI ---
+# Bu kısım o tepedeki renkli çizgileri ve "Deploy" butonunu gizler, daha temiz görünür.
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            .stApp {background-color: #0e1117;} 
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- TEMA RENGİNİ AYARLAYAN SİHİRLİ KOD ---
-if theme_mode:
-    # Karanlık Mod Renkleri
-    bg_color = "#0e1117"
-    text_color = "white"
-    card_bg = "#1f2229"
-else:
-    # Aydınlık Mod Renkleri (Apple Beyazı)
-    bg_color = "#ffffff"
-    text_color = "black"
-    card_bg = "#f0f2f6"
-
-# CSS ile renkleri zorla değiştiriyoruz
-st.markdown(f"""
-    <style>
-    .stApp {{
-        background-color: {bg_color};
-        color: {text_color};
-    }}
-    /* Yazı alanları ve kutuların renk uyumu için */
-    .stTextInput, .stSelectbox, .stFileUploader {{
-        color: {text_color};
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
-# --- MODEL SEÇİCİ ---
+# --- AKILLI MODEL SEÇİCİ (Arkada Çalışan Beyin) ---
 def get_auto_model():
     try:
         available_models = []
@@ -68,64 +37,63 @@ def get_auto_model():
             if 'generateContent' in m.supported_generation_methods:
                 available_models.append(m.name)
         
+        if not available_models:
+            return None, "Model bulunamadı."
+
+        # Öncelik sırası: Flash -> Vision -> İlk Bulunan
         chosen_model = next((m for m in available_models if 'flash' in m), None)
         if not chosen_model:
             chosen_model = next((m for m in available_models if 'vision' in m), None)
         if not chosen_model:
-            chosen_model = available_models[0] if available_models else None
+            chosen_model = available_models[0]
 
-        return genai.GenerativeModel(chosen_model) if chosen_model else None, chosen_model
+        return genai.GenerativeModel(chosen_model), chosen_model
 
     except Exception as e:
         return None, str(e)
 
 model, model_status = get_auto_model()
 
-# --- ANA EKRAN TASARIMI ---
-# Menüleri gizleyen kod (Daha temiz görünüm için)
-hide_streamlit_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
+# --- ARAYÜZ TASARIMI ---
+# Google Gemini gibi sadece başlık ve alt açıklama
 st.title("✨ AI Görsel Analiz")
-st.write("Aşağıya bir mesajlaşma ekran görüntüsü bırak, gerisini bana sor.")
+st.caption("Gelişmiş yapay zeka destekli mesaj ve durum analiz sistemi.")
 
-# Dosya Yükleme
-uploaded_file = st.file_uploader("", type=["jpg", "png", "jpeg"])
+st.divider() # İnce, şık bir çizgi
 
+# Dosya Yükleme Alanı
+uploaded_file = st.file_uploader("Analiz edilecek görseli seçin", type=["jpg", "png", "jpeg"])
+
+# Mod Seçimi (Daha kurumsal isimler)
+option = st.selectbox(
+    'Yanıt Tarzı Seçin',
+    ('Detaylı Durum Analizi', 'Etkileyici & Romantik', 'Cool & Esprili', 'Samimi & Arkadaşça', 'Eleştirel & İğneleyici')
+)
+
+# --- İŞLEM ---
 if uploaded_file is not None:
+    # Resmi göster (Kenarları yuvarlatılmış gibi temiz durur)
     image = Image.open(uploaded_file)
-    # Görseli ortalı ve şık gösterme
-    st.image(image, caption='Analiz Edilecek Görsel', use_column_width=True)
+    st.image(image, use_column_width=True)
     
-    # Analiz Butonu
-    if st.button('✨ Analizi Başlat', type="primary"):
+    # Butonu biraz daha şık yapalım
+    if st.button('Analizi Başlat', type="primary"):
         if not model:
-            st.error("Model bağlantı hatası.")
+            st.error("Bağlantı hatası: Model bulunamadı.")
         else:
-            with st.spinner('Yapay zeka düşünüyor...'):
+            with st.spinner('Yapay zeka yanıtı oluşturuyor...'):
                 try:
-                    prompt = "Bu görseldeki duruma Türkçe cevap ver."
-                    if 'Detaylı' in option: prompt += " Detaylı analiz et."
-                    elif 'Romantik' in option: prompt += " Romantik ve etkileyici ol."
-                    elif 'Cool' in option: prompt += " Cool, kısa ve havalı ol."
-                    elif 'Kanka' in option: prompt += " Samimi ve arkadaşça ol."
-                    elif 'Laf Sokucu' in option: prompt += " İğneleyici ve kapak edici ol."
+                    prompt = "Bu görseldeki mesajlaşmaya veya duruma Türkçe cevap ver."
+                    if 'Detaylı' in option: prompt += " Olayı detaylıca analiz et, psikolojik çıkarımlar yap."
+                    elif 'Romantik' in option: prompt += " Çok etkileyici, romantik ve duygusal bir cevap yaz."
+                    elif 'Cool' in option: prompt += " Umursamaz, havalı ve kısa bir cevap yaz."
+                    elif 'Arkadaşça' in option: prompt += " Çok samimi, kanka tarzı doğal bir cevap yaz."
+                    elif 'Eleştirel' in option: prompt += " Zekice laf sokan, iğneleyici bir cevap yaz."
                     
                     response = model.generate_content([prompt, image])
                     
-                    # Cevabı şık bir kutuda gösterelim
-                    st.markdown(f"""
-                    <div style="background-color: {card_bg}; padding: 20px; border-radius: 10px; color: {text_color}; border: 1px solid rgba(128, 128, 128, 0.2);">
-                        <h4>💡 AI Tavsiyesi:</h4>
-                        <p>{response.text}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                    st.markdown("### 💡 AI Önerisi")
+                    st.info(response.text)
                     
                 except Exception as e:
-                    st.error(f"Hata: {e}")
+                    st.error(f"Bir hata oluştu: {e}")
