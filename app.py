@@ -137,4 +137,19 @@ if uploaded_file is not None:
                     elif 'Romantik' in option: prompt = base_prompt + " Çok etkileyici, duygusal ve romantik bir dille yaz."
                     elif 'Cool' in option: prompt = base_prompt + " Çok kısa, net, umursamaz ve havalı ol."
                     elif 'Samimi' in option: prompt = base_prompt + " Çok doğal, samimi, arkadaşça bir dille yaz."
-                    elif 'İğneleyici'
+                    elif 'İğneleyici' in option: prompt = base_prompt + " Zekice laf sok, iğneleyici ve hedefi tam on ikiden vuran bir cevap yaz."
+                    
+                    response = model.generate_content([prompt, image])
+                    
+                    # Sonuç Kutusu (Mavi Gölgeli)
+                    st.markdown(f"""
+                    <div style="background-color: {card_bg}; padding: 20px; border-radius: 15px; border: 1px solid {border_color}; box-shadow: 0 5px 15px rgba(0,0,0,0.2); animation: slideUp 0.6s ease-out; backdrop-filter: blur(10px);">
+                        <h3 style="margin-top:0; color:{text_color};">💡 TextHero Tavsiyesi:</h3>
+                        <p style="font-size:1.1em; line-height:1.6; color:{text_color};">{response.text}</p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                except Exception as e:
+                    st.error(f"Hata oluştu: {e}")
+
+st.divider()
+st.caption("Developed by Poyraz Dede © 2026")
