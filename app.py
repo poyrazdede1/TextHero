@@ -34,7 +34,6 @@ with st.sidebar:
     
     st.subheader("📜 Geçmiş Analizler")
     if st.session_state.history:
-        # Bu buton bozulmaz, çünkü CSS sadece ana ekranı hedefliyor
         if st.button("🗑️ Geçmişi Temizle"):
             st.session_state.history = []
             st.rerun()
@@ -64,7 +63,8 @@ else:
     text_color = "#000000" 
     card_bg = "rgba(255, 255, 255, 0.95)" 
     border_color = "rgba(0, 0, 0, 0.2)"
-    uploader_bg = "rgba(255, 255, 255, 0.95)" 
+    # BURASI DEĞİŞTİ: Tam Beyaz Arka Plan
+    uploader_bg = "#ffffff" 
     uploader_border = "rgba(0, 0, 0, 0.3)"
     uploader_text_color = "#000000 !important"
     title_color = "#ffffff" 
@@ -85,38 +85,40 @@ st.markdown(f"""
     }}
     .stSelectbox div[data-baseweb="select"] > div {{ color: {text_color} !important; }}
 
+    /* DOSYA YÜKLEME KUTUSU */
     [data-testid="stFileUploaderDropzone"] {{
         background-color: {uploader_bg};
         border-color: {uploader_border};
         border-radius: 15px;
     }}
+    /* Kutunun içindeki yazılar */
     [data-testid="stFileUploaderDropzone"] div, 
     [data-testid="stFileUploaderDropzone"] span, 
     [data-testid="stFileUploaderDropzone"] small,
     [data-testid="stFileUploaderDropzone"] p {{ color: {uploader_text_color}; }}
     
-    /* --- GİZLİ BAŞLIK BUTONU AYARI --- */
-    /* Sadece ana ekrandaki (stMain) birincil olmayan butonları hedefler */
+    /* --- GİZLİ BAŞLIK BUTONU (DAHA BÜYÜK) --- */
     [data-testid="stMain"] .stButton button:not([kind="primary"]) {{
         background-color: transparent !important;
         border: none !important;
         color: {title_color} !important;
-        font-size: 3rem !important; /* H1 Başlık Boyutu */
-        font-weight: 700 !important;
+        font-size: 4.5rem !important; /* BOYUT BÜYÜTÜLDÜ (Eskisi 3rem) */
+        font-weight: 800 !important;
         padding: 0 !important;
         text-align: left !important;
         box-shadow: none !important;
         display: block !important;
         width: 100%;
         margin-bottom: 0px !important;
+        line-height: 1.2 !important;
     }}
-    /* Üzerine gelince (Hover) hafif parlasın ki tıklanabilir olduğu hissedilsin */
+    
     [data-testid="stMain"] .stButton button:not([kind="primary"]):hover {{
         color: #e0e0e0 !important;
         background-color: transparent !important;
-        text-shadow: 0 0 10px rgba(255,255,255,0.5);
+        text-shadow: 0 0 20px rgba(255,255,255,0.6);
     }}
-    /* Tıklanınca (Active) */
+    
     [data-testid="stMain"] .stButton button:not([kind="primary"]):active,
     [data-testid="stMain"] .stButton button:not([kind="primary"]):focus {{
         background-color: transparent !important;
@@ -153,8 +155,7 @@ model = get_model()
 
 # --- ANA EKRAN ---
 
-# 1. GİZLİ BAŞLIK BUTONU
-# Kullanıcı bunu sadece "TextHero Pro" yazısı sanacak ama aslında bir buton
+# 1. GİZLİ BAŞLIK BUTONU (DEV)
 if st.button("✨ TextHero Pro", key="home_btn", help="Ekranı temizlemek için tıkla"):
     st.session_state.uploader_key += 1
     st.rerun()
