@@ -19,9 +19,11 @@ except Exception as e:
     st.error("⚠️ API Anahtarı bulunamadı! Lütfen Streamlit panelinden 'Secrets' kısmına GOOGLE_API_KEY ekleyin.")
     st.stop()
 
-# --- GEÇMİŞ (SESSION STATE) ---
+# --- SESSION STATE (GEÇMİŞ & SIFIRLAMA İÇİN) ---
 if 'history' not in st.session_state:
     st.session_state.history = []
+if 'uploader_key' not in st.session_state:
+    st.session_state.uploader_key = 0
 
 # --- SOL MENÜ (AYARLAR & GEÇMİŞ) ---
 with st.sidebar:
@@ -29,7 +31,7 @@ with st.sidebar:
     
     # 1. Tema Ayarı
     theme_mode = st.toggle("🌙 Karanlık Mod", value=True)
-    st.caption("Mod değişse de arka plan sabit kalır.")
+    st.caption("Arka plan sabit kalır, kutular değişir.")
     
     st.divider()
     
@@ -56,22 +58,22 @@ fixed_bg_gradient = "linear-gradient(to bottom right, #000000 50%, #1a1d24 100%)
 
 if theme_mode:
     # --- KARANLIK MOD ---
-    # Kartlar koyu, yazılar beyaz
     text_color = "#ffffff"
     card_bg = "rgba(31, 34, 41, 0.9)"
     border_color = "rgba(255, 255, 255, 0.2)"
     uploader_bg = "rgba(31, 34, 41, 0.9)"
     uploader_border = "rgba(255, 255, 255, 0.2)"
+    uploader_text_color = "#ffffff" # Koyu modda yazılar beyaz
     title_color = "#ffffff" 
 else:
     # --- BEYAZ (LIGHT) MOD ---
-    # Arka plan koyu kalsa da, KARTLAR BEYAZ, yazılar SİYAH oluyor
-    text_color = "#000000" # Kart içi yazılar siyah
-    card_bg = "rgba(255, 255, 255, 0.95)" # Bembeyaz kart
+    text_color = "#000000" 
+    card_bg = "rgba(255, 255, 255, 0.95)" 
     border_color = "rgba(0, 0, 0, 0.2)"
-    uploader_bg = "rgba(255, 255, 255, 0.95)" # Dosya yükleme alanı beyaz
+    uploader_bg = "rgba(255, 255, 255, 0.95)" 
     uploader_border = "rgba(0, 0, 0, 0.3)"
-    title_color = "#ffffff" # Ana başlık arka plan koyu olduğu için hep beyaz kalmalı
+    uploader_text_color = "#000000 !important" # ZORLA SİYAH YAP (Düzeltme Burası)
+    title_color = "#ffffff" 
 
 # --- CSS İLE TASARIM ---
 st.markdown(f"""
@@ -80,33 +82,52 @@ st.markdown(f"""
     .stApp {{
         background: {fixed_bg_gradient};
         background-attachment: fixed;
-        color: {title_color}; /* Genel sayfa yazısı (başlıklar vs) */
+        color: {title_color};
     }}
     
-    /* 2. Kartlar ve Kutular (Moda göre değişir) */
+    /* 2. Kartlar ve Kutular */
     .stSelectbox > div > div {{
         background-color: {card_bg} !important;
         color: {text_color} !important;
         border: 1px solid {border_color};
     }}
-    /* Dropdown içindeki yazı rengi ayarı */
     .stSelectbox div[data-baseweb="select"] > div {{
         color: {text_color} !important;
     }}
 
-    /* 3. Dosya Yükleme Alanı */
+    /* 3. Dosya Yükleme Alanı (RENK DÜZELTMESİ) */
     [data-testid="stFileUploaderDropzone"] {{
         background-color: {uploader_bg};
         border-color: {uploader_border};
         border-radius: 15px;
     }}
-    [data-testid="stFileUploaderDropzone"] div, [data-testid="stFileUploaderDropzone"] small {{ 
-        color: {text_color} !important; 
+    /* Dosya yükleme kutusunun içindeki TÜM yazıları hedefle */
+    [data-testid="stFileUploaderDropzone"] div, 
+    [data-testid="stFileUploaderDropzone"] span, 
+    [data-testid="stFileUploaderDropzone"] small,
+    [data-testid="stFileUploaderDropzone"] p {{ 
+        color: {uploader_text_color}; 
     }}
     
-    /* 4. Animasyonlar */
+    /* 4. Başlık Butonu (TextHero Pro) */
+    .reset-btn {{
+        background: none!important;
+        border: none;
+        padding: 0!important;
+        color: {title_color} !important;
+        text-decoration: none;
+        cursor: pointer;
+        font-size: 3rem;
+        font-weight: 700;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    }}
+    .reset-btn:hover {{
+        opacity: 0.8;
+    }}
+    
+    /* Animasyonlar */
     @keyframes slideUp {{ from {{ transform: translateY(20px); opacity: 0; }} to {{ transform: translateY(0); opacity: 1; }} }}
-    h1 {{ animation: slideUp 0.8s ease-out; color: {title_color}; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); }}
+    .element-anim {{ animation: slideUp 0.8s ease-out; }}
     
     /* MAVİ BUTON */
     .stButton button[kind="primary"] {{
@@ -136,7 +157,16 @@ def get_model():
 model = get_model()
 
 # --- ANA EKRAN ---
-st.title("✨ TextHero Pro")
+
+# BAŞLIK (RESET FONKSİYONU)
+# Streamlit'te başlığa tıklandığında sayfayı yenilemek için özel bir buton yapısı
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    if st.button("✨ TextHero Pro", key="home_btn", help="Yeni işlem için tıkla"):
+        # Uploader key'i değiştirerek dosya yükleyiciyi sıfırla
+        st.session_state.uploader_key += 1
+        st.rerun()
+
 st.write("Profesyonel modunu seç, görseli yükle, analizi al.")
 st.divider()
 
@@ -146,8 +176,12 @@ option = st.selectbox(
     ('🧠 Detaylı Psikolojik Analiz', '💌 Romantik & Duygusal', '✨ Cool & Kısa', '🤝 Samimi & Doğal', '🎯 İğneleyici & Keskin')
 )
 
-# 2. DOSYA YÜKLEME
-uploaded_file = st.file_uploader("Analiz edilecek görseli buraya bırak", type=["jpg", "png", "jpeg"])
+# 2. DOSYA YÜKLEME (Key ile sıfırlanabilir yapıldı)
+uploaded_file = st.file_uploader(
+    "Analiz edilecek görseli buraya bırak", 
+    type=["jpg", "png", "jpeg"], 
+    key=f"uploader_{st.session_state.uploader_key}"
+)
 
 if uploaded_file is not None:
     image = Image.open(uploaded_file)
@@ -179,7 +213,6 @@ if uploaded_file is not None:
                     })
 
                     # --- SONUÇ KUTUSU ---
-                    # Bu kutu da seçilen moda göre renk alır (Siyahsa Siyah, Beyazsa Beyaz)
                     st.markdown(f"""
                     <div style="background-color: {card_bg}; padding: 20px; border-radius: 15px; border: 1px solid {border_color}; box-shadow: 0 5px 15px rgba(0,0,0,0.2); animation: slideUp 0.6s ease-out; backdrop-filter: blur(10px);">
                         <h3 style="margin-top:0; color:{text_color};">💡 TextHero Tavsiyesi:</h3>
