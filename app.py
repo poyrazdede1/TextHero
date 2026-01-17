@@ -4,7 +4,7 @@ from PIL import Image
 
 # --- AYARLAR ---
 st.set_page_config(
-    page_title="TextHero Ultra", 
+    page_title="TextHero Pro", 
     page_icon="✨", 
     layout="centered", 
     initial_sidebar_state="collapsed"
@@ -25,44 +25,49 @@ with st.sidebar:
     st.divider()
     st.caption("Developed by Poyraz Dede")
 
-# --- TEMA, RENK VE ANİMASYON AYARLARI ---
-# Kullanıcının görseline benzer, bulanık siyah-beyaz arka plan
-bg_img_url = "https://images.unsplash.com/photo-1557682250-33bd709cbe85?q=80&w=2000&auto=format&fit=crop"
-
+# --- TEMA VE RENK TANIMLARI ---
 if theme_mode:
-    overlay_color = "rgba(0, 0, 0, 0.7)" # Karanlık mod için kaplama
-    bg_color, text_color, card_bg, border_color = "#0e1117", "#ffffff", "rgba(31, 34, 41, 0.8)", "rgba(255, 255, 255, 0.3)"
-    button_hover_glow = "rgba(255,255,255,0.5)"
+    # Koyu Mod Renkleri (Çoğunluğu Siyah Gradient)
+    bg_gradient = "linear-gradient(to bottom right, #000000 50%, #1a1d24 100%)"
+    text_color = "#ffffff"
+    card_bg = "rgba(31, 34, 41, 0.9)"
+    border_color = "rgba(255, 255, 255, 0.2)"
+    button_color = "#0d6efd" # Profesyonel Mavi
+    button_hover_glow = "rgba(13, 110, 253, 0.6)" # Mavi parlama
 else:
-    overlay_color = "rgba(255, 255, 255, 0.85)" # Aydınlık mod için kaplama
-    bg_color, text_color, card_bg, border_color = "#ffffff", "#000000", "rgba(240, 242, 246, 0.8)", "rgba(0, 0, 0, 0.3)"
-    button_hover_glow = "rgba(0,0,0,0.5)"
+    # Aydınlık Mod Renkleri (Temiz Beyaz Gradient)
+    bg_gradient = "linear-gradient(to bottom right, #ffffff 50%, #f0f2f6 100%)"
+    text_color = "#000000"
+    card_bg = "rgba(255, 255, 255, 0.9)"
+    border_color = "rgba(0, 0, 0, 0.2)"
+    button_color = "#0d6efd" # Profesyonel Mavi
+    button_hover_glow = "rgba(13, 110, 253, 0.4)"
 
+# --- CSS İLE TASARIM VE ANİMASYONLAR ---
 st.markdown(f"""
     <style>
     /* 1. Arka Plan ve Genel Stil */
     .stApp {{
-        background: linear-gradient({overlay_color}, {overlay_color}), url("{bg_img_url}");
-        background-size: cover; background-position: center; background-attachment: fixed;
+        background: {bg_gradient};
+        background-attachment: fixed;
         color: {text_color};
     }}
     .stTextInput, .stSelectbox, .stFileUploader {{ color: {text_color}; }}
     
-    /* 2. Animasyon Tanımları */
+    /* 2. Animasyonlar */
     @keyframes slideUp {{ from {{ transform: translateY(20px); opacity: 0; }} to {{ transform: translateY(0); opacity: 1; }} }}
-    @keyframes pulse {{ 0% {{ transform: scale(1); }} 50% {{ transform: scale(1.02); }} 100% {{ transform: scale(1); }} }}
 
-    /* 3. Elemanlara Animasyon ve Stil Uygulama */
+    /* 3. Eleman Stilleri */
     h1 {{ animation: slideUp 0.8s ease-out; text-shadow: 2px 2px 4px rgba(0,0,0,0.2); }}
     .stMarkdown p {{ animation: slideUp 1s ease-out; }}
     
     /* Mod Seçim Kutusu */
     .stSelectbox > div > div {{
         animation: slideUp 1.2s ease-out;
-        transition: transform 0.3s, box-shadow 0.3s;
         border-radius: 10px;
+        background-color: {card_bg};
+        border: 1px solid {border_color};
     }}
-    .stSelectbox > div > div:hover {{ transform: translateY(-3px); box-shadow: 0 6px 12px rgba(0,0,0,0.15); }}
 
     /* Dosya Yükleme Alanı */
     [data-testid="stFileUploaderDropzone"] {{
@@ -70,15 +75,18 @@ st.markdown(f"""
         border-color: {border_color}; background-color: {card_bg};
         border-radius: 15px; transition: all 0.3s;
     }}
-    [data-testid="stFileUploaderDropzone"]:hover {{ border-color: {text_color}; transform: scale(1.01); }}
+    [data-testid="stFileUploaderDropzone"]:hover {{ border-color: {button_color}; transform: scale(1.01); }}
     [data-testid="stFileUploaderDropzone"] div, [data-testid="stFileUploaderDropzone"] small {{ color: {text_color} !important; }}
 
-    /* Buton Efektleri */
-    .stButton button {{
+    /* MAVİ BAŞLAT BUTONU */
+    .stButton button[kind="primary"] {{
         animation: slideUp 1.6s ease-out;
+        background-color: {button_color} !important;
+        border-color: {button_color} !important;
+        color: white !important;
         border-radius: 10px; transition: all 0.3s; font-weight: bold;
     }}
-    .stButton button:hover {{
+    .stButton button[kind="primary"]:hover {{
         transform: scale(1.05);
         box-shadow: 0 0 20px {button_hover_glow};
     }}
@@ -99,14 +107,14 @@ def get_model():
 model = get_model()
 
 # --- ANA EKRAN ---
-st.title("✨ TextHero")
-st.write("Modunu seç, görseli yükle, cevabı al.")
+st.title("✨ TextHero Pro")
+st.write("Profesyonel modunu seç, görseli yükle, analizi al.")
 st.divider()
 
-# 1. MOD SEÇİMİ (En Başta)
+# 1. MOD SEÇİMİ (Yeni Profesyonel Emojiler)
 option = st.selectbox(
     'Yapay Zeka Modu Seçin:',
-    ('🔍 Detaylı Analiz', '❤️ Romantik & Etkileyici', '😎 Cool & Esprili', '👊 Kanka Modu', '🔥 Laf Sokucu')
+    ('🧠 Detaylı Psikolojik Analiz', '💌 Romantik & Duygusal', '✨ Cool & Kısa', '🤝 Samimi & Doğal', '🎯 İğneleyici & Keskin')
 )
 
 # 2. DOSYA YÜKLEME
@@ -116,31 +124,17 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption='Analiz Edilecek Görsel', use_column_width=True)
     
-    # 3. BAŞLAT BUTONU
+    # 3. MAVİ BAŞLAT BUTONU
     if st.button('✨ Analizi Başlat', type="primary"):
         if not model:
             st.error("Model bağlantısı başarısız. API Key ayarlarını kontrol et.")
         else:
-            with st.spinner('TextHero cevabı hazırlıyor...'):
+            with st.spinner('TextHero profesyonel analiz yapıyor...'):
                 try:
-                    base_prompt = "Bu görseldeki duruma Türkçe cevap ver. ÖNEMLİ: Önce direkt verilmesi gereken cevabı söyle, sonra açıklama yap."
-                    if 'Detaylı' in option: prompt = base_prompt + " Psikolojik analiz yap."
-                    elif 'Romantik' in option: prompt = base_prompt + " Çok etkileyici ve romantik ol."
-                    elif 'Cool' in option: prompt = base_prompt + " Kısa, havalı ve gizemli ol."
-                    elif 'Kanka' in option: prompt = base_prompt + " Samimi, kanka ağzıyla konuş."
-                    elif 'Laf Sokucu' in option: prompt = base_prompt + " İğneleyici konuş, laf sok."
+                    base_prompt = "Bu görseldeki duruma Türkçe cevap ver. ÖNEMLİ KURAL: Lafı uzatmadan önce direkt vermem gereken cevabı veya tepkiyi söyle, sonra açıklamasını yap."
                     
-                    response = model.generate_content([prompt, image])
-                    
-                    # Sonuç Kutusu (Animasyonlu)
-                    st.markdown(f"""
-                    <div style="background-color: {card_bg}; padding: 20px; border-radius: 15px; border: 1px solid {border_color}; box-shadow: 0 4px 15px rgba(0,0,0,0.1); animation: slideUp 0.6s ease-out; backdrop-filter: blur(5px);">
-                        <h3 style="margin-top:0; color:{text_color};">💡 TextHero Tavsiyesi:</h3>
-                        <p style="font-size:1.1em; line-height:1.6; color:{text_color};">{response.text}</p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                except Exception as e:
-                    st.error(f"Hata: {e}")
-
-st.divider()
-st.caption("Developed by Poyraz Dede © 2026")
+                    if 'Psikolojik' in option: prompt = base_prompt + " Durumu psikolojik açıdan detaylı analiz et, alt metinleri oku."
+                    elif 'Romantik' in option: prompt = base_prompt + " Çok etkileyici, duygusal ve romantik bir dille yaz."
+                    elif 'Cool' in option: prompt = base_prompt + " Çok kısa, net, umursamaz ve havalı ol."
+                    elif 'Samimi' in option: prompt = base_prompt + " Çok doğal, samimi, arkadaşça bir dille yaz."
+                    elif 'İğneleyici'
